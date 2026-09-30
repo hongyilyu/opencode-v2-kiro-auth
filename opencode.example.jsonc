@@ -1,0 +1,40 @@
+{
+  // opencode 2.x (@opencode/cli 2.x). Merge this into ~/.config/opencode/opencode.json.
+  "$schema": "https://opencode.ai/config.json",
+
+  // Load the plugin from npm. Pin a version with @<version> if you want. Alternatives:
+  //   - GitHub: "github:hongyilyu/opencode-v2-kiro-auth"
+  //   - Local checkout: "file:///ABSOLUTE/PATH/TO/opencode-v2-kiro-auth"
+  "plugins": ["@hongyilyu/opencode-v2-kiro-auth@latest"],
+
+  // You don't need a provider block. The plugin registers `kiro` for AWS Builder ID and IAM
+  // Identity Center and `kiro-api` for API keys, with claude-fable-5.1, claude-opus-5.5, and
+  // gpt-5.6-sol, their limits, and effort variants. A provider appears in the model picker once you connect it with
+  // `opencode auth login kiro`, `opencode auth login kiro-api`, or KIRO_API_KEY. A `providers`
+  // block for it (below) lists it right away instead, and its requests fail until you sign in.
+  //
+  // Override or extend the catalog per provider. Config wins over the plugin's defaults. An entry
+  // with `modelID` is an alias: Kiro receives the modelID, the limits come from the entry. Effort
+  // variants only take effect on claude-* and gpt-* ids. A claude-*/gpt-* model you add only here
+  // gets opencode's default Anthropic effort variants unless you list `variants` yourself. Use []
+  // for a model that takes no effort level.
+  // "providers": {
+  //   "kiro": {
+  //     "models": {
+  //       "claude-opus-5.5-200k": {
+  //         "modelID": "claude-opus-5.5",
+  //         "limit": { "context": 200000, "output": 64000 }
+  //       },
+  //       "claude-sonnet-5": {
+  //         "name": "Claude Sonnet 5",
+  //         "limit": { "context": 1000000, "output": 64000 },
+  //         "variants": [{ "id": "low" }, { "id": "high" }]
+  //       }
+  //     }
+  //   }
+  // },
+
+  // Route the built-in `websearch` tool through Kiro's server-side web search. Without this,
+  // opencode asks which search provider to use the first time a model calls the tool.
+  "websearch": { "provider": "kiro" }
+}
