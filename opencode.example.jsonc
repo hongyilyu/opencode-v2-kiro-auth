@@ -5,7 +5,7 @@
   // Load the plugin from npm. Pin a version with @<version> if you want. Alternatives:
   //   - GitHub: "github:hongyilyu/opencode-v2-kiro-auth"
   //   - Local checkout: "file:///ABSOLUTE/PATH/TO/opencode-v2-kiro-auth"
-  "plugins": ["@hongyilyu/opencode-v2-kiro-auth@latest"],
+  "plugins": ["opencode-v2-kiro-auth"],
 
   // You don't need a provider block. The plugin registers `kiro` for AWS Builder ID and IAM
   // Identity Center and `kiro-api` for API keys, with claude-fable-5.1, claude-opus-5.5, and

@@ -1,4 +1,4 @@
-// End-to-end check of @hongyilyu/opencode-v2-kiro-auth against a real Kiro account. Never prints
+// End-to-end check of opencode-v2-kiro-auth against a real Kiro account. Never prints
 // tokens.
 //
 // Usage: bun run check [model]

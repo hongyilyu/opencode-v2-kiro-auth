@@ -1,4 +1,4 @@
-# @hongyilyu/opencode-v2-kiro-auth
+# opencode-v2-kiro-auth
 
 > **Use at your own risk.** This is an unofficial tool and is not affiliated with Kiro, Amazon,
 > or AWS. Using a Kiro subscription outside its official client may violate the provider's Terms
@@ -36,19 +36,19 @@ Add the plugin to `plugins` in `~/.config/opencode/opencode.json`.
 ```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugins": ["@hongyilyu/opencode-v2-kiro-auth@latest"],
+  "plugins": ["opencode-v2-kiro-auth"],
   "websearch": { "provider": "kiro" }
 }
 ```
 
 The `plugins` entry can take any of these forms:
 
-- npm: `"@hongyilyu/opencode-v2-kiro-auth@latest"`, or `@<version>` to pin one.
+- npm: `"opencode-v2-kiro-auth"`, or `@<version>` to pin one.
 - GitHub: `"github:hongyilyu/opencode-v2-kiro-auth"`.
 - Local checkout: `"file:///ABSOLUTE/PATH/TO/opencode-v2-kiro-auth"`. A plain absolute path also
   works.
 
-`opencode plugin add @hongyilyu/opencode-v2-kiro-auth` installs the npm package and adds it to
+`opencode plugin add opencode-v2-kiro-auth` installs the npm package and adds it to
 your global config for you.
 
 You don't need a `providers` block. The plugin registers `kiro` and `kiro-api` with its three
