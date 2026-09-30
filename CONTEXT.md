@@ -25,7 +25,7 @@ load-bearing, so use them exactly. This package is an opencode 2.x plugin only. 
   `http.request` hook hands that to the host to send. The plugin sends the calls the host knows
   nothing about itself, through the same renderer: InvokeMCP web search and the management
   operations behind profile ARNs.
-- **Request/response hooks.** Two session hooks, scoped to each provider, rewrite the Anthropic
+- **Request/response hooks.** Two session hooks, scoped by provider id, rewrite the Anthropic
   exchange. `http.request` replaces the host's Anthropic `Request` with the Kiro one, and
   `http.response` runs every upstream `Response` to a request it rewrote through
   `kiroResponseToAnthropic`. State between them (debug trace, model, context limit) rides a
@@ -54,7 +54,7 @@ load-bearing, so use them exactly. This package is an opencode 2.x plugin only. 
   touches tool-result turns.
 - **Hook failures.** The host's Promise adapter wraps every plugin hook in `Effect.promise`, so a
   rejection is a defect, not a typed error. An error thrown from the `http.request` hook
-  (credential errors `KiroAuthError`/`KiroApiKeyError`, request-shape errors `KiroRequestError`)
+  (credential errors such as `KiroAuthError`, request-shape errors `KiroRequestError`)
   therefore fails the turn with its message, and the runner never retries it: it only retries
   typed provider errors. The plugin registers no `retry` hook. For the same reason a rejected
   `authorize` promise surfaces as HTTP 500 in the CLI, so form `pattern`/`format` carry the
@@ -138,7 +138,7 @@ load-bearing, so use them exactly. This package is an opencode 2.x plugin only. 
 ## SSE encoding
 
 - **Anthropic SSE stream.** The `event:`/`data:` stream consumed by the host's Anthropic
-  protocol, `@opencode/ai/providers/anthropic`, which both providers register on. The
+  protocol, `@opencode/ai/providers/anthropic`, which the `kiro` provider registers on. The
   **AnthropicSseEncoder** (src/sse.ts), an explicit state machine over KiroStreamEvents,
   produces it.
 - **Atomic tool block.** The encoder buffers tool calls (id, name, input fragments) and
@@ -188,19 +188,18 @@ load-bearing, so use them exactly. This package is an opencode 2.x plugin only. 
   uses the fixed Builder ID start URL in us-east-1, and Identity Center takes the start URL and
   region from the form. The plugin never reads kiro-cli's registration or token cache.
 - **KiroSession.** The seam consumers use for per-request auth:
-  `authHeaders()`, `chatProfileArn()` (undefined for API keys, so chat bodies omit it), and
-  `mcpProfileArn()` (always resolves). Both session kinds (OAuth and API key)
-  live in src/session.ts, and the Kiro transport client (src/client.ts) is the sole
-  consumer of the profileArn methods. `createSession` builds one per request from a
-  **SessionSpec**, either `{ mode: "oauth"; accessToken }` or `{ mode: "api"; key }`, which the
-  host adapter fills from the credential the host resolved for the provider's integration.
+  `authHeaders()`, `chatProfileArn()`, and `mcpProfileArn()` (always resolves). Sessions live in
+  src/session.ts, and the Kiro transport client (src/client.ts) is the sole consumer of the
+  profileArn methods. `createSession` builds one per request from a **SessionSpec** such as
+  `{ mode: "oauth"; accessToken }`, which the host adapter fills from the credential the host
+  resolved for the provider's integration.
   src/session.ts reads no credential store itself.
 - **RefreshState packing.** The entire OAuth refresh state (refresh token, client
   id/secret, region, start URL, method), base64url-packed into opencode's `refresh` credential
   field with the `kiro-oauth-v1:` prefix. opencode's generic storage learns nothing, and
   the credential is self-contained. The prefix versions the blob format, not the host, and the
   opencode 1.x package writes the same format. The blob is credential material, and
-  `redactKiroSecrets` redacts it like API keys and bearer tokens.
+  `redactKiroSecrets` redacts it like bearer tokens.
 - **Host-owned refresh.** The host reads the stored credential, decides when it is stale
   (`connection.resolve` refreshes near expiry), and persists the result. The plugin's `refresh`
   only exchanges the packed state for a new credential at AWS SSO OIDC. It is single-flighted per
@@ -208,12 +207,8 @@ load-bearing, so use them exactly. This package is an opencode 2.x plugin only. 
   location, but all of them share one credential store), because the host holds no lock around it
   and OIDC may rotate the refresh token, so concurrent requests share one rotation. An expired client registration or an
   unreadable blob is a `KiroAuthError` asking for a new login.
-- **API key.** A `ksk_`-prefixed key (`normalizeApiKey`), stored by the `kiro-api` key method or
-  read from `KIRO_API_KEY` by its env method. The host prefers a stored key. API-key chat bodies
-  omit `profileArn`, and InvokeMCP resolves one with GetProfile, trying the management regions in
-  order.
-- **Async memo.** `src/memo.ts` is the one bounded, promise-sharing cache behind the
-  OAuth profile ARN and the API-key profile ARN. The loader owns the policy. Resolving,
+- **Async memo.** `src/memo.ts` is the one bounded, promise-sharing cache behind profile ARN
+  lookups. The loader owns the policy. Resolving,
   even to a fallback, caches, and rejecting evicts so the next call retries. A Builder ID 4xx
   from ListAvailableProfiles is an authoritative placeholder answer and stays cached. A 5xx or
   transport failure does not.
@@ -228,7 +223,7 @@ load-bearing, so use them exactly. This package is an opencode 2.x plugin only. 
   error or believes it, and believing it records a truncated turn as success.
 - **D4** The parse is open-world (`unknown` variant). Error detection keeps its
   battle-tested string heuristics as implementation detail inside src/events.ts.
-- **D5** No unified AuthStrategy interface across OAuth and API key. The acquisition
+- **D5** No unified AuthStrategy interface across credential kinds. The acquisition
   flows are irreducibly different and host-schema-bound, and KiroSession is the right
   unification point (`SessionSpec` is a discriminated input, not a strategy). Don't
   re-propose.
@@ -254,9 +249,8 @@ load-bearing, so use them exactly. This package is an opencode 2.x plugin only. 
   The Kiro core and D1 through D8 came over from the 1.x package. The host boundary above is this
   package's own.
 - **D10** The plugin ships its own model catalog (`src/catalog.ts`) instead of requiring a
-  `providers` block. A plugin-added provider needs models to be selectable at all, and the host
-  has no hook to mirror one provider's config onto the other. Config overlays run after plugin
-  transforms and win, so users lose nothing. The example config does not repeat the catalog.
+  `providers` block. A plugin-added provider needs models to be selectable at all. Config
+  overlays run after plugin transforms and win, so users lose nothing. The example config does not repeat the catalog.
 - **D11** Web search goes through the host's built-in `websearch` tool rather than a plugin
   tool. The host owns the tool's permission, provider selection, and result rendering, and a
   second `web_search` tool beside it would confuse the model.

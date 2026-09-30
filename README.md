@@ -5,14 +5,9 @@
 > of Service and **could get your account suspended or banned**. It is meant for personal, local
 > use only. You assume all risk.
 
-An [opencode](https://opencode.ai) 2.x plugin that adds Kiro as a model provider. Sign in with
-AWS Builder ID, IAM Identity Center, or a Kiro API key, then use Kiro's Claude, GPT, and other
-models with effort levels and Kiro-backed web search. The plugin adds two providers:
-
-| Provider | Sign-in | Example |
-| --- | --- | --- |
-| `kiro` | AWS Builder ID or IAM Identity Center device flow | `--model kiro/claude-opus-5.5` |
-| `kiro-api` | Kiro API key, stored or from `KIRO_API_KEY` | `--model kiro-api/claude-opus-5.5` |
+An [opencode](https://opencode.ai) 2.x plugin that adds Kiro as the `kiro` model provider. Sign
+in with AWS Builder ID or IAM Identity Center, then use Kiro's Claude, GPT, and other models (for
+example `--model kiro/claude-opus-5.5`) with effort levels and Kiro-backed web search.
 
 The plugin registers its own AWS SSO OIDC client for the device flow, and opencode keeps the
 credentials in its own store. The plugin never reads kiro-cli's files, so you don't need
@@ -25,8 +20,7 @@ This package supports opencode 2.x only. On opencode 1.x, use
 
 - opencode 2.x, meaning `@opencode/cli` 2.0.4 or later (tested on 2.0.20). `opencode --version`
   prints `opencode v2.…`.
-- A Kiro subscription you can reach through AWS Builder ID or IAM Identity Center, or a Kiro API
-  key starting with `ksk_`.
+- A Kiro subscription you can reach through AWS Builder ID or IAM Identity Center.
 
 ## Install
 
@@ -51,10 +45,10 @@ The `plugins` entry can take any of these forms:
 `opencode plugin add opencode-v2-kiro-auth` installs the npm package and adds it to
 your global config for you.
 
-You don't need a `providers` block. The plugin registers `kiro` and `kiro-api` with its three
-models (`claude-fable-5.1`, `claude-opus-5.5`, `gpt-5.6-sol`), their limits, and effort variants. Each provider shows up in the model picker once you
-connect it. If you add a `providers.kiro` or `providers.kiro-api` override, opencode lists that
-provider right away, and its requests fail until you sign in.
+You don't need a `providers` block. The plugin registers `kiro` with its three models
+(`claude-fable-5.1`, `claude-opus-5.5`, `gpt-5.6-sol`), their limits, and effort variants. The
+provider shows up in the model picker once you sign in. If you add a `providers.kiro` override,
+opencode lists the provider right away, and its requests fail until you sign in.
 
 ## Sign in
 
@@ -74,23 +68,20 @@ opencode auth login kiro --method oauth --answer authMethod=idc \
   --answer startUrl=https://mycompany.awsapps.com/start --answer region=us-east-1
 ```
 
-For an API key, run `opencode auth login kiro-api` and paste the key, or export `KIRO_API_KEY`.
-If both exist, the stored key wins.
-
 `opencode auth list` shows what is connected, and `opencode auth logout kiro` signs out.
 
 A fresh opencode 2.x install starts with no credentials, so sign in once. When opencode 2.x
-upgrades an existing 1.x install in place, it imports the `kiro` and `kiro-api` credentials from
-`auth.json`, and the plugin keeps refreshing an imported device-flow sign-in.
+upgrades an existing 1.x install in place, it imports your `kiro` sign-in from `auth.json`, and
+the plugin keeps refreshing it.
 
 Credentials are secrets. Don't share or commit opencode's credential store or the output of
 `opencode auth export`.
 
 ## Models and effort
 
-Both providers get the same built-in catalog, defined in [`src/catalog.ts`](src/catalog.ts).
-Once a provider is connected, `opencode models` lists it. The plugin ships three models, each
-with a 1M-token context window and 128K output:
+The built-in catalog is defined in [`src/catalog.ts`](src/catalog.ts). Once you sign in,
+`opencode models` lists the `kiro` models. The plugin ships three models, each with a 1M-token
+context window and 128K output:
 
 | Model | Effort levels |
 | --- | --- |
@@ -120,14 +111,14 @@ characters divided by four.
 The plugin adds `kiro` as a backend for opencode's built-in `websearch` tool. Select it with
 `"websearch": { "provider": "kiro" }`, or pick it when opencode asks the first time a model
 searches. Searches go to Kiro's server-side web search, the same one kiro-cli uses, through the
-CodeWhisperer `InvokeMCP` operation. They sign in with the connected `kiro` provider, or with
-`kiro-api` if `kiro` isn't connected. Kiro rejects queries longer than 200 characters, so the
-plugin truncates them. It drops results that have no URL.
+CodeWhisperer `InvokeMCP` operation, using your `opencode auth login kiro` sign-in. Kiro rejects
+queries longer than 200 characters, so the plugin truncates them. It drops results that have no
+URL.
 
 ## Config overrides
 
-The catalog is only a default. `providers.kiro.models` and `providers.kiro-api.models` in your
-config override or extend it, and your config wins:
+The catalog is only a default. `providers.kiro.models` in your config overrides or extends it,
+and your config wins:
 
 ```jsonc
 "providers": {
@@ -159,14 +150,12 @@ config override or extend it, and your config wins:
   levels Kiro accepts for that model instead, or use `"variants": []` for none.
   On a catalog model, opencode adds the `variants` you list to the built-in ones. It doesn't
   replace them.
-- Each provider has its own block, so an override under `kiro` doesn't apply to `kiro-api`.
 - The context limit also scales the input-token estimate, so a wrong limit skews usage.
 
 ## Environment variables
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `KIRO_API_KEY` | Unset | API key for the `kiro-api` provider. A key stored with `opencode auth login kiro-api` takes precedence. |
 | `KIRO_KEEP_IMAGE_TURNS` | `2` | How many recent image-bearing turns keep their images in requests. `0` strips all images. |
 | `KIRO_RATE_LIMIT_RETRY_SECONDS` | Unset | Positive integer the plugin puts in `retry-after` on every 429 it returns, whether Kiro sent an HTTP 429 or throttled inside the stream. Without it, the upstream `Retry-After` and opencode's own backoff apply. |
 | `KIRO_DEBUG` | Unset | `1` or `true` writes correlated request and event-stream diagnostics to stderr. The logs hold shapes and byte counts, never prompt text, tool output, or credentials. |
@@ -186,14 +175,11 @@ environment, and `opencode service --help` shows how to configure it.
   to start a device flow as this bare status, for example when AWS doesn't recognize the
   Identity Center start URL. Add `--standalone --print-logs` to see the real message in the
   server log. The login form rejects a malformed start URL or region before contacting AWS.
-- **`Kiro is not signed in for kiro`** (or `kiro-api`). Connect that provider with
-  `opencode auth login kiro` or `opencode auth login kiro-api`. A fresh opencode 2.x install
-  starts empty.
+- **`Kiro is not signed in for kiro`.** Run `opencode auth login kiro`. A fresh opencode 2.x
+  install starts empty.
 - **`Kiro credential format is unsupported`, `…is corrupt`, `…is incomplete`, or `Kiro OAuth
   client registration expired`.** The plugin can't refresh the stored device-flow sign-in. Run
   `opencode auth login kiro` again.
-- **`Kiro credential is invalid`** (or `is empty`) on `kiro-api`. Kiro API keys start with
-  `ksk_`. Check the stored key or `KIRO_API_KEY`.
 - **`Prompt is too long: Kiro rejected the request…`.** Kiro caps the total size of a request,
   history and images together, and answers an oversized one with a 400
   `CONTENT_LENGTH_EXCEEDS_THRESHOLD`. opencode resends the full history every turn, so
@@ -239,15 +225,14 @@ never prints tokens.
 Where things live:
 
 - `server.ts` is the entry opencode loads. Its default export is the plugin.
-- `src/plugin.ts` is the host adapter. It registers the integrations (the device-flow OAuth
-  method, the API-key method, and the `KIRO_API_KEY` env method), both providers over
-  `src/catalog.ts`, and the web search backend. Its `http.request` and `http.response` hooks
+- `src/plugin.ts` is the host adapter. It registers the `kiro` provider over `src/catalog.ts`,
+  its device-flow sign-in, and the web search backend. Its `http.request` and `http.response` hooks
   rewrite the Anthropic exchange into Kiro's. An error thrown while preparing a request (not
-  signed in, a bad key, a malformed body) fails the turn, and opencode doesn't retry it.
+  signed in, a malformed body) fails the turn, and opencode doesn't retry it.
 - `src/auth.ts` handles AWS SSO OIDC client registration, device authorization, and token
   refresh.
-- `src/session.ts`, `src/profile.ts`, and `src/apikey.ts` build per-request Kiro sessions and
-  look up profile ARNs.
+- `src/session.ts` and `src/profile.ts` build per-request Kiro sessions and look up profile
+  ARNs.
 - `src/request.ts` maps the Anthropic Messages request opencode builds into Kiro's CodeWhisperer
   `GenerateAssistantResponse` payload, covering text, tool calls, and images.
 - `src/client.ts` renders Kiro's wire format. It renders chat requests for opencode to send and

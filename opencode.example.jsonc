@@ -7,17 +7,17 @@
   //   - Local checkout: "file:///ABSOLUTE/PATH/TO/opencode-v2-kiro-auth"
   "plugins": ["opencode-v2-kiro-auth"],
 
-  // You don't need a provider block. The plugin registers `kiro` for AWS Builder ID and IAM
-  // Identity Center and `kiro-api` for API keys, with claude-fable-5.1, claude-opus-5.5, and
-  // gpt-5.6-sol, their limits, and effort variants. A provider appears in the model picker once you connect it with
-  // `opencode auth login kiro`, `opencode auth login kiro-api`, or KIRO_API_KEY. A `providers`
-  // block for it (below) lists it right away instead, and its requests fail until you sign in.
+  // You don't need a provider block. The plugin registers the `kiro` provider (AWS Builder ID and
+  // IAM Identity Center sign-in) with claude-fable-5.1, claude-opus-5.5, and gpt-5.6-sol, their
+  // limits, and effort variants. It appears in the model picker once you sign in with
+  // `opencode auth login kiro`. A `providers` block for it (below) lists it right away instead,
+  // and its requests fail until you sign in.
   //
-  // Override or extend the catalog per provider. Config wins over the plugin's defaults. An entry
-  // with `modelID` is an alias: Kiro receives the modelID, the limits come from the entry. Effort
-  // variants only take effect on claude-* and gpt-* ids. A claude-*/gpt-* model you add only here
-  // gets opencode's default Anthropic effort variants unless you list `variants` yourself. Use []
-  // for a model that takes no effort level.
+  // Override or extend the catalog. Config wins over the plugin's defaults. An entry with `modelID`
+  // is an alias: Kiro receives the modelID, the limits come from the entry. Effort variants only
+  // take effect on claude-* and gpt-* ids. A claude-*/gpt-* model you add only here gets opencode's
+  // default Anthropic effort variants unless you list `variants` yourself. Use [] for a model that
+  // takes no effort level.
   // "providers": {
   //   "kiro": {
   //     "models": {
